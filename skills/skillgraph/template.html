@@ -1,0 +1,424 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>🦞 SkillGraph — OpenClaw Skill Evolution</title>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/d3/7.9.0/d3.min.js"></script>
+<style>
+@import url('https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;600;700&family=Outfit:wght@300;400;600;700&display=swap');
+* { margin: 0; padding: 0; box-sizing: border-box; }
+:root {
+  --bg-primary: #0a0a0a;
+  --bg-secondary: #111111;
+  --bg-panel: #161616;
+  --bg-card: #1a1a1a;
+  --border: #2a2a2a;
+  --text-primary: #e0e0e0;
+  --text-secondary: #888888;
+  --text-muted: #555555;
+  --accent: #ff6b35;
+  --accent-glow: rgba(255, 107, 53, 0.3);
+}
+body {
+  font-family: 'Outfit', sans-serif;
+  background: var(--bg-primary);
+  color: var(--text-primary);
+  overflow: hidden;
+  height: 100vh;
+  display: flex;
+}
+#sidebar {
+  width: 260px;
+  min-width: 260px;
+  background: var(--bg-secondary);
+  border-right: 1px solid var(--border);
+  overflow-y: auto;
+  padding: 16px 12px;
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+#sidebar h1 {
+  font-size: 18px;
+  font-weight: 700;
+  color: var(--accent);
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+#search-box {
+  width: 100%;
+  padding: 8px 12px;
+  background: var(--bg-card);
+  border: 1px solid var(--border);
+  border-radius: 6px;
+  color: var(--text-primary);
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 12px;
+  outline: none;
+}
+#search-box:focus { border-color: var(--accent); }
+#search-box::placeholder { color: var(--text-muted); }
+.category-group { margin-top: 4px; }
+.category-header {
+  font-size: 11px;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 1px;
+  color: var(--text-muted);
+  padding: 6px 0;
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  cursor: pointer;
+}
+.category-dot {
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  display: inline-block;
+}
+.category-count {
+  margin-left: auto;
+  font-size: 10px;
+  color: var(--text-muted);
+}
+.skill-item {
+  font-size: 13px;
+  padding: 5px 8px 5px 20px;
+  cursor: pointer;
+  border-radius: 4px;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  color: var(--text-secondary);
+  transition: all 0.15s;
+}
+.skill-item:hover {
+  background: var(--bg-card);
+  color: var(--text-primary);
+}
+.skill-item.active {
+  background: rgba(255, 107, 53, 0.15);
+  color: var(--accent);
+}
+.skill-version {
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 10px;
+  color: var(--text-muted);
+  float: right;
+}
+#graph-container {
+  flex: 1;
+  position: relative;
+  overflow: hidden;
+}
+#graph-container svg {
+  width: 100%;
+  height: 100%;
+}
+.node-circle {
+  cursor: pointer;
+  transition: r 0.2s;
+}
+.node-circle:hover {
+  filter: brightness(1.3);
+}
+.node-label {
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 10px;
+  fill: var(--text-secondary);
+  pointer-events: none;
+  text-anchor: middle;
+}
+.edge-line {
+  stroke-opacity: 0.4;
+  stroke: #F0F1F5;
+  fill: none;
+}
+.edge-line:hover {
+  stroke-opacity: 0.85;
+}
+#meta-bar {
+  position: absolute;
+  bottom: 12px;
+  left: 50%;
+  transform: translateX(-50%);
+  background: rgba(22, 22, 22, 0.9);
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  padding: 8px 20px;
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 11px;
+  color: var(--text-muted);
+  display: flex;
+  gap: 24px;
+  backdrop-filter: blur(8px);
+}
+#meta-bar span {
+  color: var(--text-secondary);
+}
+#detail-panel {
+  width: 340px;
+  min-width: 340px;
+  background: var(--bg-secondary);
+  border-left: 1px solid var(--border);
+  overflow-y: auto;
+  padding: 20px 16px;
+  display: none;
+  flex-direction: column;
+  gap: 16px;
+}
+#detail-panel.open {
+  display: flex;
+}
+.detail-header {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+.detail-name {
+  font-size: 20px;
+  font-weight: 700;
+}
+.detail-id {
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 11px;
+  color: var(--text-muted);
+}
+.detail-badge {
+  display: inline-block;
+  padding: 2px 8px;
+  border-radius: 4px;
+  font-size: 10px;
+  font-weight: 600;
+  text-transform: uppercase;
+}
+.health-bar {
+  height: 6px;
+  background: var(--bg-card);
+  border-radius: 3px;
+  overflow: hidden;
+  margin-top: 4px;
+}
+.health-fill {
+  height: 100%;
+  border-radius: 3px;
+  transition: width 0.5s;
+}
+.detail-section-title {
+  font-size: 11px;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 1px;
+  color: var(--text-muted);
+  margin-top: 8px;
+}
+.detail-description {
+  font-size: 13px;
+  color: var(--text-secondary);
+  line-height: 1.5;
+}
+.tag {
+  display: inline-block;
+  padding: 2px 8px;
+  background: var(--bg-card);
+  border: 1px solid var(--border);
+  border-radius: 4px;
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 11px;
+  color: var(--text-secondary);
+  margin: 2px 3px 2px 0;
+}
+.detail-list {
+  list-style: none;
+  padding: 0;
+}
+.detail-list li {
+  font-size: 12px;
+  color: var(--text-secondary);
+  padding: 3px 0;
+  border-bottom: 1px solid var(--border);
+}
+.detail-list li:last-child {
+  border: none;
+}
+.detail-meta {
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 11px;
+  color: var(--text-muted);
+}
+</style>
+</head>
+<body>
+<div id="sidebar">
+  <h1>🦞 SkillGraph</h1>
+  <input id="search-box" type="text" placeholder="Search skills..." />
+  <div id="skill-list"></div>
+</div>
+<div id="graph-container">
+  <svg id="graph-svg"></svg>
+  <div id="meta-bar">
+    <div>Skills: <span id="meta-total">0</span></div>
+    <div>Edges: <span id="meta-edges">0</span></div>
+    <div>Categories: <span id="meta-cats">0</span></div>
+    <div>Generated: <span id="meta-time">—</span></div>
+  </div>
+</div>
+<div id="detail-panel">
+  <div id="detail-content"></div>
+</div>
+<script>
+const GRAPH_DATA = __GRAPH_DATA_JSON__;
+function renderSidebar(data) {
+  const list = document.getElementById('skill-list');
+  const grouped = {};
+  data.nodes.forEach(n => {
+    if (!grouped[n.category]) grouped[n.category] = [];
+    grouped[n.category].push(n);
+  });
+  let html = '';
+  Object.entries(grouped)
+    .sort((a, b) => b[1].length - a[1].length)
+    .forEach(([cat, skills]) => {
+      const color = skills[0].color;
+      html += '<div class="category-group">';
+      html += '<div class="category-header">';
+      html += '<span class="category-dot" style="background:' + color + '"></span>';
+      html += cat;
+      html += '<span class="category-count">(' + skills.length + ')</span>';
+      html += '</div>';
+      skills
+        .sort((a, b) => a.name.localeCompare(b.name))
+        .forEach(s => {
+          html += '<div class="skill-item" data-id="' + s.id + '" onclick="selectNode(\'' + s.id + '\')">';
+          html += s.name;
+          html += '<span class="skill-version">' + s.version + '</span>';
+          html += '</div>';
+        });
+      html += '</div>';
+    });
+  list.innerHTML = html;
+}
+function showDetail(node) {
+  const panel = document.getElementById('detail-panel');
+  const content = document.getElementById('detail-content');
+  panel.classList.add('open');
+  const healthColor = node.health >= 70 ? '#4CAF50' : node.health >= 40 ? '#FF9800' : '#F44336';
+  let html = '';
+  html += '<div class="detail-header">';
+  html += '<span class="category-dot" style="background:' + node.color + ';width:12px;height:12px"></span>';
+  html += '<span class="detail-name">' + node.name + '</span>';
+  html += '</div>';
+  html += '<div class="detail-id">' + node.id + ' · ' + node.version + '</div>';
+  html += '<div class="detail-badge" style="background:' + node.color + '22;color:' + node.color + '">' + node.category + '</div>';
+  html += '<div class="detail-section-title">Health</div>';
+  html += '<div class="health-bar"><div class="health-fill" style="width:' + node.health + '%;background:' + healthColor + '"></div></div>';
+  html += '<div class="detail-meta">' + node.health + '/100</div>';
+  html += '<div class="detail-section-title">Description</div>';
+  html += '<div class="detail-description">' + node.description + '</div>';
+  if (node.tech_stack.length) {
+    html += '<div class="detail-section-title">Tech Stack</div>';
+    html += '<div>' + node.tech_stack.map(t => '<span class="tag">' + t + '</span>').join('') + '</div>';
+  }
+  if (node.capabilities.length) {
+    html += '<div class="detail-section-title">Capabilities</div>';
+    html += '<ul class="detail-list">' + node.capabilities.map(c => '<li>✓ ' + c + '</li>').join('') + '</ul>';
+  }
+  if (node.known_gaps.length) {
+    html += '<div class="detail-section-title">Known Gaps</div>';
+    html += '<ul class="detail-list">' + node.known_gaps.map(g => '<li>⚠ ' + g + '</li>').join('') + '</ul>';
+  }
+  if (node.cron_schedules.length) {
+    html += '<div class="detail-section-title">Cron Schedules</div>';
+    html += '<ul class="detail-list">' + node.cron_schedules.map(c => '<li>⏰ ' + c + '</li>').join('') + '</ul>';
+  }
+  html += '<div class="detail-section-title">Meta</div>';
+  html += '<div class="detail-meta">';
+  html += 'Source: ' + node.source_dir + '<br>';
+  html += 'Lines: ' + node.line_count + '<br>';
+  html += 'Modified: ' + node.last_modified.split('T')[0] + '<br>';
+  html += '</div>';
+  html += '<button onclick="document.getElementById(\'detail-panel\').classList.remove(\'open\')" style="margin-top:12px;padding:6px 12px;background:var(--bg-card);border:1px solid var(--border);border-radius:4px;color:var(--text-secondary);cursor:pointer;font-size:12px">Close Panel</button>';
+  content.innerHTML = html;
+}
+function renderGraph(data) {
+  const svg = d3.select('#graph-svg');
+  const width = document.getElementById('graph-container').clientWidth;
+  const height = document.getElementById('graph-container').clientHeight;
+  svg.selectAll('*').remove();
+  const defs = svg.append('defs');
+  const filter = defs.append('filter').attr('id', 'glow');
+  filter.append('feGaussianBlur').attr('stdDeviation', '4').attr('result', 'blur');
+  const merge = filter.append('feMerge');
+  merge.append('feMergeNode').attr('in', 'blur');
+  merge.append('feMergeNode').attr('in', 'SourceGraphic');
+  const g = svg.append('g');
+  const zoom = d3.zoom().scaleExtent([0.2, 5]).on('zoom', e => g.attr('transform', e.transform));
+  svg.call(zoom);
+  const sim = d3.forceSimulation(data.nodes)
+    .force('link', d3.forceLink(data.edges).id(d => d.id).distance(120))
+    .force('charge', d3.forceManyBody().strength(-300))
+    .force('center', d3.forceCenter(width / 2, height / 2))
+    .force('collision', d3.forceCollide().radius(d => d.size + 10));
+  const links = g.selectAll('.edge-line')
+    .data(data.edges).join('line')
+    .attr('class', 'edge-line')
+    .attr('stroke', '#333')
+    .attr('stroke-width', 1.5);
+  const nodes = g.selectAll('.node-group')
+    .data(data.nodes).join('g')
+    .attr('class', 'node-group')
+    .call(d3.drag()
+      .on('start', (e, d) => { if (!e.active) sim.alphaTarget(0.3).restart(); d.fx = d.x; d.fy = d.y; })
+      .on('drag', (e, d) => { d.fx = e.x; d.fy = e.y; })
+      .on('end', (e, d) => { if (!e.active) sim.alphaTarget(0); d.fx = null; d.fy = null; })
+    );
+  nodes.append('circle')
+    .attr('r', d => d.size + 6)
+    .attr('fill', d => d.glow)
+    .attr('opacity', 0.15)
+    .attr('filter', 'url(#glow)');
+  nodes.append('circle')
+    .attr('class', 'node-circle')
+    .attr('r', d => d.size)
+    .attr('fill', d => d.color)
+    .attr('stroke', d => d.glow)
+    .attr('stroke-width', 2)
+    .on('click', (e, d) => { selectNode(d.id); });
+  nodes.append('text')
+    .attr('class', 'node-label')
+    .attr('dy', d => d.size + 14)
+    .text(d => d.name);
+  sim.on('tick', () => {
+    links
+      .attr('x1', d => d.source.x).attr('y1', d => d.source.y)
+      .attr('x2', d => d.target.x).attr('y2', d => d.target.y);
+    nodes.attr('transform', d => 'translate(' + d.x + ',' + d.y + ')');
+  });
+  document.getElementById('meta-total').textContent = data.nodes.length;
+  document.getElementById('meta-edges').textContent = data.edges.length;
+  document.getElementById('meta-cats').textContent = data.categories.length;
+  document.getElementById('meta-time').textContent = data.meta.generated_at.split('T')[0];
+  window._graphNodes = data.nodes;
+}
+function selectNode(id) {
+  const node = window._graphNodes.find(n => n.id === id);
+  if (node) showDetail(node);
+  document.querySelectorAll('.skill-item').forEach(el => {
+    el.classList.toggle('active', el.dataset.id === id);
+  });
+}
+document.getElementById('search-box').addEventListener('input', function () {
+  const q = this.value.toLowerCase();
+  document.querySelectorAll('.skill-item').forEach(el => {
+    const name = el.textContent.toLowerCase();
+    el.style.display = name.includes(q) ? '' : 'none';
+  });
+});
+renderSidebar(GRAPH_DATA);
+renderGraph(GRAPH_DATA);
+</script>
+</body>
+</html>
