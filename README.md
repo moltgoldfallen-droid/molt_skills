@@ -1,31 +1,3 @@
-<p align="center">
-  <img src="assets/skillgraph-banner.png" alt="SkillGraph Banner" width="800">
-</p>
-
-<h1 align="center">🦞 SkillGraph</h1>
-<p align="center">
-  <strong>Self-Introspecting Skill Evolution Dashboard for OpenClaw</strong>
-</p>
-
-<p align="center">
-  <a href="#features">Features</a> •
-  <a href="#demo">Demo</a> •
-  <a href="#installation">Installation</a> •
-  <a href="#how-it-works">How It Works</a> •
-  <a href="#configuration">Configuration</a> •
-  <a href="#contributing">Contributing</a>
-</p>
-
-<p align="center">
-  <img src="https://img.shields.io/badge/OpenClaw-2026.4+-ff6b35?style=flat-square" alt="OpenClaw">
-  <img src="https://img.shields.io/badge/python-3.10+-3776ab?style=flat-square&logo=python&logoColor=white" alt="Python">
-  <img src="https://img.shields.io/badge/D3.js-v7-f9a03c?style=flat-square&logo=d3.js&logoColor=white" alt="D3.js">
-  <img src="https://img.shields.io/badge/dependencies-zero-brightgreen?style=flat-square" alt="Zero Deps">
-  <img src="https://img.shields.io/badge/license-MIT-blue?style=flat-square" alt="License">
-</p>
-
----
-
 ## What Is This?
 
 SkillGraph is an OpenClaw skill that **visualizes your entire skill ecosystem** as an interactive force-directed node graph — inspired by [Muse's Skill Evolution Graph (技能演化)](https://muse.ai).
