@@ -6,9 +6,6 @@ It automatically scans every installed OpenClaw skill, extracts metadata from ea
 
 **No manual data entry.** Install a new skill → the graph picks it up on the next rebuild.
 
-<p align="center">
-  <img src="assets/skillgraph-screenshot.png" alt="SkillGraph Dashboard" width="900">
-</p>
 
 ---
 
